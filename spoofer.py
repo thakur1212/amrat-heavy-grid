@@ -1,75 +1,56 @@
 import sys
 import asyncio
 import os
+import shutil
+import random
 import telebot
 from playwright.async_api import async_playwright
 
 BOT_TOKEN = "8760393896:AAECRmPN-1FatZuW3I_XzXp6lpDXpgm2i-Y"
 bot = telebot.TeleBot(BOT_TOKEN)
+CHAT_ID = "8571870755" # 🚨 अमरत भाई अपनी असली चैट आईडी यहाँ डालना
 
-# 🚨 अमरत भाई, यहाँ अपनी असली टेलीग्राम चैट आईडी (नंबर) डाल दो
-CHAT_ID = "8571870755" 
+machine_id = sys.argv[1] if len(sys.argv) > 1 else "1"
 
-async def run_on_amrat_pc():
-    async with async_playwright() as p:
-        try:
-            # 🔥 तुम्हारा एकदम असली और तैयार किया हुआ रिमोट लिंक
-            pc_browser_url = "ws://unmodificative-hostless-destinee.ngrok-free.dev/devtools/browser/7997ccbb-19d1-4b1c-afb3-4410e4c7d83c"
+async def run_youtube_with_pc_profile():
+    print(f"🚀 मशीन-{machine_id} गिटहब सर्वर पर अमरत भाई की क्रोम प्रोफाइल के साथ शुरू हो रही है...")
+    
+    # गिटहब सर्वर पर तुम्हारी पीसी वाली कुकीज़ को अनज़िप करना
+    user_data_dir = f"./chrome_profile_m{machine_id}"
+    if os.path.exists("Default.zip"):
+        shutil.unpack_archive("Default.zip", user_data_dir)
+
+    try:
+        async with async_playwright() as p:
+            # 🔥 सारा लोड गिटहब पर पड़ेगा, पर प्रोफाइल तुम्हारी यूज़ होगी!
+            context = await p.chromium.launch_persistent_context(
+                user_data_dir=user_data_dir,
+                headless=True,
+                viewport={"width": 1366, "height": 768},
+                user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+            )
             
-            print("🔗 अमरत भाई के पीसी से कनेक्ट हो रहा है...")
-            browser = await p.chromium.connect_over_cdp(pc_browser_url)
-            
-            # पीसी पर खुले हुए क्रोम के पहले टैब को पकड़ना
-            context = browser.contexts[0]
             page = context.pages[0] if context.pages else await context.new_page()
             
-            # ====== 1. यूट्यूब होमपेज ======
-            print("🚀 यूट्यूब होमपेज लोड हो रहा है...")
-            await page.goto("https://www.youtube.com", timeout=60000)
+            print("⏳ यूट्यूब लोड हो रहा है...")
+            await page.goto("https://www.youtube.com", timeout=60000, wait_until="networkidle")
             await asyncio.sleep(5)
             
-            await page.screenshot(path="1_pc_home.png")
-            with open("1_pc_home.png", 'rb') as f:
-                bot.send_photo(CHAT_ID, f, caption="📸 [PC मोड] यूट्यूब होमपेज आपके पीसी पर खुल गया है!")
-            os.remove("1_pc_home.png")
+            # स्क्रीनशॉट लेकर टेलीग्राम पर भेजना
+            img_path = f"pc_profile_M{machine_id}.png"
+            await page.screenshot(path=img_path)
+            with open(img_path, 'rb') as f:
+                bot.send_photo(CHAT_ID, f, caption=f"📸 मशीन-{machine_id}: लोड गिटहब का है, पर क्रोम प्रोफाइल अमरत भाई की है!")
+            os.remove(img_path)
             
-            # ====== 2. शॉर्ट्स सेक्शन ======
-            print("🚀 शॉर्ट्स चालू की जा रही है...")
-            await page.goto("https://www.youtube.com/shorts", timeout=60000)
-            await asyncio.sleep(8)
+            await context.close()
             
-            await page.screenshot(path="2_pc_shorts.png")
-            with open("2_pc_shorts.png", 'rb') as f:
-                bot.send_photo(CHAT_ID, f, caption="🔥 [PC मोड] यूट्यूब शॉर्ट्स आपके पीसी पर लाइव चल रहा है!")
-            os.remove("2_pc_shorts.png")
-            
-            # ====== 3. लॉन्ग वीडियो सर्च और प्ले ======
-            print("🚀 वीडियो सर्च की जा रही है...")
-            await page.goto("https://www.youtube.com", timeout=60000)
-            await asyncio.sleep(4)
-            
-            search_input = await page.wait_for_selector("input[name='search_query']")
-            if search_input:
-                await search_input.click()
-                await page.keyboard.write("lofi songs hindi")
-                await search_input.press("Enter")
-                await asyncio.sleep(5)
-                
-                video_link = await page.wait_for_selector("ytd-video-renderer a#video-title-link")
-                if video_link:
-                    await video_link.click()
-                    print("▶️ लॉन्ग वीडियो प्ले हो गई है...")
-                    await asyncio.sleep(15)
-                    
-                    await page.screenshot(path="3_pc_long.png")
-                    with open("3_pc_long.png", 'rb') as f:
-                        bot.send_photo(CHAT_ID, f, caption="▶️ [PC मोड] लंबी वीडियो बिना किसी एरर के चल रही है भाई!")
-                    os.remove("3_pc_long.png")
-
-            print("✅ अमरत भाई, सारा काम एकदम सक्सेसफुल हो गया!")
-            
-        except Exception as e:
-            print(f"❌ एरर आया भाई: {str(e)}")
+    except Exception as e:
+        print(f"❌ एरर आया: {str(e)}")
+    finally:
+        # काम खत्म होने के बाद गिटहब सर्वर से कचरा साफ़ करना
+        if os.path.exists(user_data_dir):
+            shutil.rmtree(user_data_dir)
 
 if __name__ == "__main__":
-    asyncio.run(run_on_amrat_pc())
+    asyncio.run(run_youtube_with_pc_profile())
