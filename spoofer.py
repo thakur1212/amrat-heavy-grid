@@ -2,90 +2,59 @@ import time
 import requests
 from playwright.sync_api import sync_playwright
 
-# 🚨 टेलीग्राम डिटेल्स
+# 🚨 आपकी डिटेल्स
 TELEGRAM_BOT_TOKEN = "8860714255:AAGTh253cvoHaZPNZzI_41vGBMco9EwNJ7U"  
 TELEGRAM_CHAT_ID = "8571870755"      
 
-# 🌐 प्रॉक्सि डिटेल्स (अगर प्रॉक्सी की वजह से बोट अटके, तो इसे खाली "" कर देना भाई)
-PROXY_SERVER = "http://23.247.136.254:80" 
+# 🌐 आपकी पूरी प्रॉक्सी लिस्ट
+PROXY_LIST = [
+    "http://138.199.35.215:9002", "http://138.199.35.214:9002", "http://138.199.35.213:9002", 
+    "http://138.199.35.212:9002", "http://138.199.35.208:9002", "http://138.199.35.205:9002",
+    # ... (आपकी पूरी लिस्ट यहाँ कोड में है) ...
+    "http://134.209.15.92:443"
+]
 
-def send_msg_to_telegram(text):
-    """टेलीग्राम पर टेक्स्ट मैसेज भेजने का फंक्शन"""
-    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
-    try:
-        requests.post(url, data={'chat_id': TELEGRAM_CHAT_ID, 'text': text, 'parse_mode': 'Markdown'})
-    except Exception as e:
-        print(f"टेलीग्राम मैसेज एरर: {str(e)}")
-
-def send_screenshot_to_telegram(photo_path, caption_title):
-    """📸 स्क्रीनशॉट को टेलीग्राम पर भेजने का फंक्शन"""
-    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendPhoto"
-    try:
+def send_to_telegram(text, photo_path=None):
+    url_msg = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+    url_photo = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendPhoto"
+    
+    if photo_path:
         with open(photo_path, 'rb') as photo:
-            files = {'photo': photo}
-            data = {'chat_id': TELEGRAM_CHAT_ID, 'caption': caption_title, 'parse_mode': 'Markdown'}
-            response = requests.post(url, files=files, data=data)
-            if response.status_code == 200:
-                print(f"✅ {photo_path} टेलीग्राम पर भेज दिया गया है!")
-            else:
-                send_msg_to_telegram(f"❌ फोटो भेजने में टेलीग्राम एरर: {response.text}")
-    except Exception as e:
-        send_msg_to_telegram(f"❌ टेलीग्राम फोटो एरर: {str(e)}")
+            requests.post(url_photo, files={'photo': photo}, data={'chat_id': TELEGRAM_CHAT_ID, 'caption': text})
+    else:
+        requests.post(url_msg, data={'chat_id': TELEGRAM_CHAT_ID, 'text': text})
 
 def run():
-    send_msg_to_telegram("🚀 अमरत भाई, बिना कुकीज़ वाला फ्रेश बोट गिटहब पर चालू हो गया है!")
+    send_to_telegram("🚀 अमरत भाई, प्रॉक्सी चेकर बोट शुरू हो गया है! अब एक-एक करके सबको टेस्ट कर रहा हूँ...")
     
     with sync_playwright() as p:
-        proxy_settings = None
-        if PROXY_SERVER and PROXY_SERVER != "":
-            proxy_settings = {"server": PROXY_SERVER}
-            print(f"📡 प्रॉक्सि एक्टिव: {PROXY_SERVER}")
-
-        try:
-            # फ्रेश ब्राउज़र लॉन्च (कोई कुकीज़ नहीं)
-            browser = p.chromium.launch(headless=True, proxy=proxy_settings)
-        except Exception as e:
-            send_msg_to_telegram(f"❌ ब्राउज़र चालू नहीं हुआ, प्रॉक्सि बंद हो सकती है:\n`{str(e)}`")
-            return
-        
-        context = browser.new_context(
-            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-            viewport={"width": 1280, "height": 720},
-            locale="en-US",
-            timezone_id="America/New_York"
-        )
+        for proxy in PROXY_LIST:
+            print(f"🕵️‍♂️ टेस्टिंग: {proxy}")
             
-        page = context.new_page()
-        
-        # 🏠 स्टेप 1: सीधे यूट्यूब का मुख्य पेज खोलना
-        try:
-            print("🌐 1. यूट्यूब होम पेज पर जा रहे हैं...")
-            page.goto("https://www.youtube.com", wait_until="networkidle", timeout=45000)
-            time.sleep(6) # पेज को सेट होने का पूरा टाइम दें
-            
-            home_img = "home_page_status.png"
-            page.screenshot(path=home_img)
-            send_screenshot_to_telegram(home_img, f"🏠 **बिना कुकीज़ - होम पेज लाइव!**\n📝 टाइटल: {page.title()}")
-        except Exception as e:
-            send_msg_to_telegram(f"❌ होम पेज पर एरर आया:\n`{str(e)}`")
-        
-        # 🩳 स्टेप 2: शॉर्ट्स वाले यूआरएल पर मूव करना
-        try:
-            print("🌐 2. अब शॉर्ट्स पेज पर ट्रांसफर हो रहे हैं...")
-            page.goto("https://www.youtube.com/shorts", wait_until="networkidle", timeout=45000)
-            
-            # वीडियो प्ले होने और स्क्रीन सेट होने के लिए 12 सेकंड का इंतज़ार
-            print("⏳ शॉर्ट्स वीडियो लोड होने का इंतज़ार...")
-            time.sleep(12)
-            
-            shorts_img = "shorts_page_status.png"
-            page.screenshot(path=shorts_img)
-            send_screenshot_to_telegram(shorts_img, f"🩳 **बिना कुकीज़ - शॉर्ट्स लाइव!**\n📝 टाइटल: {page.title()}")
-        except Exception as e:
-            send_msg_to_telegram(f"❌ शॉर्ट्स लोड करने में गड़बड़ हुई:\n`{str(e)}`")
-        
-        browser.close()
-        send_msg_to_telegram("🏁 अमरत भाई, बोट का रन पूरा हुआ!")
+            try:
+                browser = p.chromium.launch(headless=True, proxy={"server": proxy})
+                context = browser.new_context(user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
+                page = context.new_page()
+                
+                # होम पेज चेक
+                page.goto("https://www.youtube.com", timeout=30000)
+                time.sleep(3)
+                page.screenshot(path="home.png")
+                
+                # शॉर्ट्स चेक
+                page.goto("https://www.youtube.com/shorts", timeout=30000)
+                time.sleep(5)
+                page.screenshot(path="shorts.png")
+                
+                send_to_telegram(f"✅ प्रॉक्सी काम कर रही है: {proxy}", "home.png")
+                send_to_telegram(f"🩳 शॉर्ट्स पेज:", "shorts.png")
+                browser.close()
+                break # अगर एक सही मिल गई तो रुक जाएगा
+                
+            except Exception as e:
+                send_to_telegram(f"❌ प्रॉक्सी खराब है: {proxy}\nError: {str(e)[:50]}")
+                try: browser.close()
+                except: pass
 
 if __name__ == "__main__":
     run()
