@@ -1,25 +1,31 @@
-name: Amrat Multi Process Grid With PC Profile
-on: workflow_dispatch
+name: YouTube Telegram Bot
+
+# बोट कब चलना चाहिए?
+on:
+  workflow_dispatch: # इससे गिटहब में 'Run workflow' का बटन आ जाएगा, जब मन करे तब बटन दबाकर चलाओ।
+  push:
+    branches:
+      - main
+      - master # जब भी आप कोड पुश करोगे, तब भी यह अपने आप चलेगा।
 
 jobs:
-  launch_grid:
-    runs-on: ubuntu-latest
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-      
-    strategy:
-      matrix:
-        machine_id: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+  run-spoofer:
+    runs-on: ubuntu-latest # गिटहब के सुपरफ़ास्ट सर्वर पर चलेगा
+
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
+    - name: Checkout Repository Code
+      uses: actions/checkout@v4
 
-      - name: Install Dependencies
-        run: |
-          pip install playwright requests telebot
-          playwright install chromium
-          playwright install-deps chromium
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
 
-      - name: Run Check Flow
-        run: |
-          python spoofer.py "${{ matrix.machine_id }}"
+    - name: Install Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install playwright requests
+        playwright install chromium
+
+    - name: Run Spoofer Bot
+      run: python spoofer.py
