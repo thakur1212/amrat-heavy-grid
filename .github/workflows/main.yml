@@ -1,28 +1,22 @@
-name: YouTube Auto Test
-on: [workflow_dispatch]
+name: Amrat Multi Process Grid
+on: workflow_dispatch
 
 jobs:
-  run-bot:
-    runs-on: ubuntu-latest
+  launch_grid:
+    runs-on: ubuntu-latest  # यह गिटहब का खुद का कंप्यूटर यूज़ करेगा
     strategy:
       matrix:
-        machine_id: [1, 2] # यहाँ आपकी 2 मशीनें सेट हैं
+        machine_id: [1, 2, 3, 4, 5]
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Setup Python
-        uses: actions/setup-python@v4
-        with: 
-          python-version: '3.9'
-
-      - name: Install dependencies
+      - name: Install Dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install --no-cache-dir playwright playwright-stealth telebot pyTelegramBotAPI
-          playwright install chromium
-          sudo apt-get update
-          sudo apt-get install -y xvfb
+          pip install playwright requests telebot
+          playwright install firefox
+          playwright install-deps firefox
 
-      - name: Run script
-        run: xvfb-run python spoofer.py "${{ matrix.machine_id }}"
+      - name: Run Check Flow
+        run: |
+          python spoofer.py "${{ matrix.machine_id }}"
