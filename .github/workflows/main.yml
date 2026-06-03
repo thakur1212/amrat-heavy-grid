@@ -11,11 +11,17 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
       - name: Install Dependencies
         run: |
+          pip install --upgrade pip
           pip install playwright requests telebot
-          playwright install firefox
-          playwright install-deps firefox
+          # 🛠️ यह कमांड सारे ज़रूरी हेडलेस शेल और डिपेंडेंसीज़ को ज़बरदस्ती इंस्टॉल कर देगी
+          python -m playwright install --with-deps chromium
 
       - name: Run Check Flow
         run: |
