@@ -11,27 +11,27 @@ CHAT_ID = "8571870755"
 
 machine_id = sys.argv[1] if len(sys.argv) > 1 else "1"
 
-# 🌐 अमरत भाई, आपकी लाइव टनल यहाँ सेट कर दी है
+# 🌐 आपका लाइव Ngrok लिंक यहाँ है
 YOUR_PC_PROXY = "https://unmodificative-hostless-destinee.ngrok-free.dev"
 
 async def human_delay(min_sec=3, max_sec=6):
     await asyncio.sleep(random.uniform(min_sec, max_sec))
 
 async def run_youtube_check():
-    print(f"🚀 मशीन-{machine_id} गिटहब पर स्टार्ट हो रही है (Amrat Private Tunnel Mode)...")
+    print(f"🚀 मशीन-{machine_id} गिटहब पर स्टार्ट हो रही है (Tunnel Fix Active)...")
     try:
         async with async_playwright() as p:
             
-            # लोड गिटहब के हैवी सर्वर का होगा, लेकिन इंटरनेट रास्ता आपका (Ngrok) होगा
             browser = await p.chromium.launch(
                 headless=True,
                 args=[
                     '--disable-blink-features=AutomationControlled',
                     '--no-sandbox',
                     '--disable-infobars',
-                    '--window-size=1366,768'
+                    '--window-size=1366,768',
+                    '--ignore-certificate-errors' # 🛠️ टनल के सर्टिफिकेट एरर को बायपास करने के लिए
                 ],
-                # 🎯 असली मैजिक: गिटहब को आपकी होम आईपी का चश्मा पहना दिया
+                # 🎯 टनल कनेक्शन फेल होने से बचाने के लिए डायरेक्ट सर्वर पास किया
                 proxy={
                     "server": YOUR_PC_PROXY
                 }
@@ -48,15 +48,15 @@ async def run_youtube_check():
             await page.add_init_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
             
             # ====== 1. यूट्यूब होमपेज ======
-            print(f"📡 मशीन-{machine_id}: आपके पीसी के नेटवर्क के जरिए यूट्यूब ओपन हो रहा है...")
-            # टनल के कारण थोड़ा स्लो हो सकता है, इसलिए टाइमआउट 90 सेकंड रखा है
-            await page.goto("https://www.youtube.com", timeout=90000, wait_until="commit")
-            await human_delay(5, 9)
+            print(f"📡 मशीन-{machine_id}: टनल के रास्ते यूट्यूब होमपेज पर जा रहे हैं...")
+            # टनल स्लो होने के कारण और कनेक्शन एस्टेब्लिश करने के लिए wait_until को हटाकर लोड टाइम दिया
+            await page.goto("https://www.youtube.com", timeout=90000)
+            await human_delay(6, 10)
             
             home_img = f"home_M{machine_id}.png"
             await page.screenshot(path=home_img)
             with open(home_img, 'rb') as f:
-                bot.send_photo(CHAT_ID, f, caption=f"📸 मशीन-{machine_id}: यूट्यूब होमपेज! (Tunnel Network Mode)")
+                bot.send_photo(CHAT_ID, f, caption=f"📸 मशीन-{machine_id}: यूट्यूब होमपेज लोड हुआ! (Tunnel Fixed)")
             os.remove(home_img)
             
             # ====== 2. रैंडम वीडियो प्ले ======
@@ -75,7 +75,7 @@ async def run_youtube_check():
                 
             # ====== 3. यूट्यूब शॉर्ट्स ======
             print(f"🔥 मशीन-{machine_id}: शॉर्ट्स पेज लोड हो रहा है...")
-            await page.goto("https://www.youtube.com/shorts", timeout=90000, wait_until="commit")
+            await page.goto("https://www.youtube.com/shorts", timeout=90000)
             await human_delay(8, 14)
             
             shorts_img = f"shorts_M{machine_id}.png"
