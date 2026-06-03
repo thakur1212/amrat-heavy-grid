@@ -1,31 +1,22 @@
-name: YouTube Telegram Bot
-
-# बोट कब चलना चाहिए?
-on:
-  workflow_dispatch: # इससे गिटहब में 'Run workflow' का बटन आ जाएगा, जब मन करे तब बटन दबाकर चलाओ।
-  push:
-    branches:
-      - main
-      - master # जब भी आप कोड पुश करोगे, तब भी यह अपने आप चलेगा।
+name: YouTube Auto Test
+on: [workflow_dispatch]
 
 jobs:
-  run-spoofer:
-    runs-on: ubuntu-latest # गिटहब के सुपरफ़ास्ट सर्वर पर चलेगा
-
+  run-bot:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        machine_id: [1, 2] # यहाँ सिर्फ 2 मशीनें रखी हैं
     steps:
-    - name: Checkout Repository Code
-      uses: actions/checkout@v4
-
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.10'
-
-    - name: Install Dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install playwright requests
-        playwright install chromium
-
-    - name: Run Spoofer Bot
-      run: python spoofer.py
+      - uses: actions/checkout@v3
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with: {python-version: '3.9'}
+      - name: Install dependencies
+        run: |
+          pip install playwright playwright-stealth telebot
+          playwright install chromium
+          sudo apt-get update
+          sudo apt-get install -y xvfb
+      - name: Run script
+        run: xvfb-run python spoofer.py "${{ matrix.machine_id }}"
