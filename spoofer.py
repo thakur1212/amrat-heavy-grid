@@ -14,18 +14,33 @@ async def human_delay(min_sec=5, max_sec=10):
     await asyncio.sleep(random.uniform(min_sec, max_sec))
 
 async def run_youtube_check():
-    print(f"🚀 मशीन-{machine_id}: डकडकगो री-रूट मोड चालू...")
+    print(f"🚀 मशीन-{machine_id}: ScraperAPI मोड में चालू हो रही है...")
     from playwright.async_api import async_playwright
     
+    # गिटहब सीक्रेट से एपीआई की (Key) उठाना
+    api_key = os.environ.get("SCRAPER_API_KEY")
+    if not api_key:
+        print("❌ एरर: GitHub Secrets में SCRAPER_API_KEY नहीं मिला!")
+        bot.send_message(CHAT_ID, f"❌ मशीन-{machine_id}: कृपया गिटहब सीक्रेट्स में SCRAPER_API_KEY सेट करें!")
+        return
+
     try:
         async with async_playwright() as p:
+            # 🎯 कड़क जुगाड़: ScraperAPI के रोटेटिंग प्रॉक्सी सर्वर को प्लेराइट में जोड़ना
+            # यह गिटहब की आईपी को छुपाकर हर बार असली मोबाइल/घर की आईपी बनाएगा
             browser = await p.chromium.launch(
                 headless=True,
                 args=[
                     '--disable-blink-features=AutomationControlled',
                     '--no-sandbox',
-                    '--disable-infobars'
-                ]
+                    '--disable-infobars',
+                    '--ignore-certificate-errors' # एपीआई के टनल सर्टिफिकेट एरर को बायपास करने के लिए
+                ],
+                proxy={
+                    "server": "http://proxy-server.scraperapi.com:8001",
+                    "username": f"scraperapi",
+                    "password": api_key
+                }
             )
             
             context = await browser.new_context(
@@ -36,25 +51,30 @@ async def run_youtube_check():
             page = await context.new_page()
             await page.add_init_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
             
-            # 🎯 हटके जुगाड़: डायरेक्ट यूट्यूब न खोलकर, DuckDuckGo के रास्ते इमेज/पेज फेच करना
-            # यह यूट्यूब के बोट फिल्टर को पूरी तरह अंधा कर देता है
-            print(f"📡 मशीन-{machine_id}: डकडकगो प्रॉक्सी टनलिंग...")
-            ddg_url = f"https://html.duckduckgo.com/html?q=site:youtube.com/shorts"
-            await page.goto(ddg_url, timeout=90000)
-            await human_delay(4, 7)
+            # ======= स्टेप 1: यूट्यूब होमपेज =======
+            print(f"📡 मशीन-{machine_id}: कड़क आईपी के साथ यूट्यूब लोड हो रहा है...")
+            await page.goto("https://www.youtube.com", timeout=90000, wait_until="domcontentloaded")
+            await human_delay(6, 12)
             
-            # अब यहाँ से सीधे यूट्यूब शॉर्ट्स पर जंप मारना ताकि रेफरर हेडर (Referer Header) बदल जाए
-            print(f"🔥 मशीन-{machine_id}: असली शॉर्ट्स पर डाइव मार रहे हैं...")
-            await page.goto("https://www.youtube.com/shorts", timeout=90000)
+            home_img = f"home_M{machine_id}.png"
+            await page.screenshot(path=home_img)
+            with open(home_img, 'rb') as f:
+                bot.send_photo(CHAT_ID, f, caption=f"📸 मशीन-{machine_id}: यूट्यूब होमपेज (ScraperAPI बाईपास सक्सेस!)")
+            os.remove(home_img)
+            
+            # ======= स्टेप 2: शॉर्ट्स फीड =======
+            print(f"🔥 मशीन-{machine_id}: शॉर्ट्स पर जा रहे हैं...")
+            await page.goto("https://www.youtube.com/shorts", timeout=90000, wait_until="domcontentloaded")
             await human_delay(8, 15)
             
             shorts_img = f"shorts_M{machine_id}.png"
             await page.screenshot(path=shorts_img)
             with open(shorts_img, 'rb') as f:
-                bot.send_photo(CHAT_ID, f, caption=f"🔥 मशीन-{machine_id}: डकडकगो रूट से शॉर्ट्स बाईपास डन!")
+                bot.send_photo(CHAT_ID, f, caption=f"🔥 मशीन-{machine_id}: शॉर्ट्स एकदम लाइव चल गई!")
             os.remove(shorts_img)
 
             await browser.close()
+            print(f"✅ मशीन-{machine_id}: टास्क बिना एरर के पूरा हुआ।")
             
     except Exception as e:
         print(f"❌ मशीन-{machine_id} एरर: {str(e)}")
