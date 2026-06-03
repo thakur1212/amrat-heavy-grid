@@ -1,12 +1,18 @@
-name: Amrat Multi Process Grid
-on: workflow_dispatch
+name: Amrat Grid Runner
+
+on:
+  workflow_dispatch:
+  repository_dispatch:
+    types: [play_trigger]
 
 jobs:
-  launch_grid:
-    runs-on: ubuntu-latest  # यह गिटहब का खुद का कंप्यूटर यूज़ करेगा
+  run-grid:
+    runs-on: ubuntu-latest
     strategy:
       matrix:
-        machine_id: [1, 2, 3, 4, 5]
+        machine: [1, 2, 3, 4, 5] # आपकी 5 मशीनें एक साथ चलेंगी
+      fail-fast: false
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -16,13 +22,21 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Install Dependencies
+      - name: Install System Dependencies
         run: |
-          pip install --upgrade pip
-          pip install playwright requests telebot
-          # 🛠️ यह कमांड सारे ज़रूरी हेडलेस शेल और डिपेंडेंसीज़ को ज़बरदस्ती इंस्टॉल कर देगी
-          python -m playwright install --with-deps chromium
+          sudo apt-get update
+          sudo apt-get install -y wget curl unzip
 
-      - name: Run Check Flow
+      - name: Install Python Libraries
         run: |
-          python spoofer.py "${{ matrix.machine_id }}"
+          python -m pip install --upgrade pip
+          pip install playwright telebot nest_asyncio
+
+      - name: Install REAL Google Chrome Browser
+        run: |
+          # गिटहब की मशीन में डिफ़ॉल्ट बोट ब्राउज़र हटाकर असली क्रोम डालना
+          python -m playwright install chrome
+
+      - name: Run Spoofer Code
+        run: |
+          python spoofer.py ${{ matrix.machine }}
